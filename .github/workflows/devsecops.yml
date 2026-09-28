@@ -81,3 +81,26 @@ jobs:
         working-directory: app/backend
         run: |
           python -m pytest -v
+
+  container-security:
+    name: Docker Build & Trivy Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t somara-backend:${{ github.sha }} \
+            ./app/backend
+
+      - name: Trivy container scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: somara-backend:${{ github.sha }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: CRITICAL
