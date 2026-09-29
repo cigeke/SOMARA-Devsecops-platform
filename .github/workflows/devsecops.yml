@@ -146,7 +146,7 @@ jobs:
             docker run -d \
               --name somara-backend \
               --restart unless-stopped \
-              -p 8000:8000 \
+              -p 127.0.0.1:8000:8000 \
               ghcr.io/${{ github.repository_owner }}/somara-backend:${{ github.sha }}
 
             sleep 5
@@ -164,7 +164,7 @@ jobs:
       - name: OWASP ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.15.0
         with:
-          target: "http://154.72.49.217:8000"
+          target: "https://api.somara.so"
           allow_issue_writing: false
           fail_action: false
           artifact_name: "zap-baseline-report"
