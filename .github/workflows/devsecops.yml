@@ -119,3 +119,36 @@ jobs:
       - name: Push Docker image to GHCR
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/somara-backend:${{ github.sha }}
+
+  deploy:
+    name: Deploy to Daruur Space
+    runs-on: ubuntu-latest
+
+    needs:
+      - sast
+      - dependency-scan
+      - secret-scan
+      - tests
+      - container-security
+
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            docker pull ghcr.io/${{ github.repository_owner }}/somara-backend:${{ github.sha }}
+
+            docker rm -f somara-backend 2>/dev/null || true
+
+            docker run -d \
+              --name somara-backend \
+              --restart unless-stopped \
+              -p 8000:8000 \
+              ghcr.io/${{ github.repository_owner }}/somara-backend:${{ github.sha }}
+
+            sleep 5
+
+            curl --fail http://127.0.0.1:8000/health
