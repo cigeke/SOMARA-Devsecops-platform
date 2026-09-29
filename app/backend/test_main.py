@@ -7,6 +7,7 @@ client = TestClient(app)
 
 def test_root():
     response = client.get("/")
+
     assert response.status_code == 200
 
     data = response.json()
@@ -21,3 +22,12 @@ def test_health():
 
     assert response.status_code == 200
     assert response.json() == {"status": "healthy"}
+
+
+def test_security_headers():
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+    assert response.headers["Cross-Origin-Resource-Policy"] == "same-origin"
+    assert response.headers["Cache-Control"] == "no-store"
