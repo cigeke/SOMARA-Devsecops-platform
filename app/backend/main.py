@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 
 app = FastAPI(
@@ -21,6 +22,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 app.add_middleware(SecurityHeadersMiddleware)
+
+Instrumentator().instrument(app).expose(app)
 
 
 @app.get("/")

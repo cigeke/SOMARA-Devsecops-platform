@@ -31,3 +31,11 @@ def test_security_headers():
     assert response.headers["X-Content-Type-Options"] == "nosniff"
     assert response.headers["Cross-Origin-Resource-Policy"] == "same-origin"
     assert response.headers["Cache-Control"] == "no-store"
+
+
+def test_metrics():
+    response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "http_requests_total" in response.text
+    assert "http_request_duration_seconds" in response.text
