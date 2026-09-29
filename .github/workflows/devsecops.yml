@@ -41,7 +41,7 @@ jobs:
 
       - name: Audit Python dependencies
         run: |
-          pip install pip-audit
+          python -m pip install pip-audit
           pip-audit -r app/backend/requirements.txt
 
   secret-scan:
