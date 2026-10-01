@@ -146,6 +146,8 @@ jobs:
             docker run -d \
               --name somara-backend \
               --restart unless-stopped \
+              --memory="512m" \
+              --cpus="1.0" \
               -p 127.0.0.1:8000:8000 \
               ghcr.io/${{ github.repository_owner }}/somara-backend:${{ github.sha }}
 
