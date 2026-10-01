@@ -149,6 +149,7 @@ jobs:
               --memory="512m" \
               --cpus="1.0" \
               --cap-drop=ALL \
+              --security-opt=no-new-privileges:true \
               --read-only \
               --tmpfs /tmp:rw,noexec,nosuid,size=64m \
               -p 127.0.0.1:8000:8000 \
