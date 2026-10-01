@@ -139,7 +139,18 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
-            docker pull ghcr.io/${{ github.repository_owner }}/somara-backend:${{ github.sha }}
+            set -e
+
+            NEW_IMAGE="ghcr.io/${{ github.repository_owner }}/somara-backend:${{ github.sha }}"
+
+            echo "Pulling new image..."
+            docker pull "$NEW_IMAGE"
+
+            PREVIOUS_IMAGE=$(docker inspect somara-backend \
+              --format '{{.Config.Image}}' 2>/dev/null || true)
+
+            echo "Previous image: ${PREVIOUS_IMAGE:-none}"
+            echo "New image: $NEW_IMAGE"
 
             docker rm -f somara-backend 2>/dev/null || true
 
@@ -153,11 +164,56 @@ jobs:
               --read-only \
               --tmpfs /tmp:rw,noexec,nosuid,size=64m \
               -p 127.0.0.1:8000:8000 \
-              ghcr.io/${{ github.repository_owner }}/somara-backend:${{ github.sha }}
+              "$NEW_IMAGE"
 
+            echo "Waiting for application..."
             sleep 5
 
-            curl --fail http://127.0.0.1:8000/health
+            if curl --fail --silent http://127.0.0.1:8000/health; then
+              echo
+              echo "Deployment successful."
+
+            else
+              echo
+              echo "Health check failed."
+              echo "Starting rollback..."
+
+              docker rm -f somara-backend 2>/dev/null || true
+
+              if [ -n "$PREVIOUS_IMAGE" ]; then
+                echo "Rolling back to: $PREVIOUS_IMAGE"
+
+                docker run -d \
+                  --name somara-backend \
+                  --restart unless-stopped \
+                  --memory="512m" \
+                  --cpus="1.0" \
+                  --cap-drop=ALL \
+                  --security-opt=no-new-privileges:true \
+                  --read-only \
+                  --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+                  -p 127.0.0.1:8000:8000 \
+                  "$PREVIOUS_IMAGE"
+
+                sleep 5
+
+                if curl --fail --silent http://127.0.0.1:8000/health; then
+                  echo
+                  echo "Rollback successful."
+                  echo "Previous version is healthy."
+                else
+                  echo
+                  echo "Rollback failed."
+                  exit 1
+                fi
+
+              else
+                echo "No previous image available for rollback."
+                exit 1
+              fi
+
+              exit 1
+            fi
 
   dast:
     name: DAST - OWASP ZAP
