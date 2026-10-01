@@ -148,6 +148,7 @@ jobs:
               --restart unless-stopped \
               --memory="512m" \
               --cpus="1.0" \
+              --cap-drop=ALL \
               -p 127.0.0.1:8000:8000 \
               ghcr.io/${{ github.repository_owner }}/somara-backend:${{ github.sha }}
 
